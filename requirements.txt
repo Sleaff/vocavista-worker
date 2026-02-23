@@ -1,0 +1,5 @@
+fastapi
+uvicorn[standard]
+youtube-transcript-api
+pydantic
+yt-dlp
