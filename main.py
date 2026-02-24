@@ -2,7 +2,27 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api.proxies import WebshareProxyConfig
 import re
+from dotenv import load_dotenv
+import os
+import random
+
+load_dotenv()
+proxies_env = os.getenv("PROXIES", None)
+proxies_list = proxies_env.split(",") if proxies_env else []
+proxies_list = [p.strip() for p in proxies_list if p.strip()]
+
+def get_random_proxy_credentials():
+    if not proxies_list:
+        return None, None
+    # Each proxy should be in the format http://username:password@host:port
+    proxy_url = random.choice(proxies_list)
+    import re
+    match = re.match(r"http[s]?://([^:]+):([^@]+)@", proxy_url)
+    if match:
+        return match.group(1), match.group(2)
+    return None, None
 
 app = FastAPI(
     title="YouTube Transcript API",
@@ -33,7 +53,14 @@ async def simple_transcript(request: TranscriptRequest):
         raise HTTPException(status_code=400, detail="Invalid YouTube URL")
 
     try:
-        api = YouTubeTranscriptApi()
+        proxy_username, proxy_password = get_random_proxy_credentials()
+        proxy_config = None
+        if proxy_username and proxy_password:
+            proxy_config = WebshareProxyConfig(
+                proxy_username=proxy_username,
+                proxy_password=proxy_password,
+            )
+        api = YouTubeTranscriptApi(proxy_config=proxy_config)
         
         transcript_list = api.list(video_id)
         
