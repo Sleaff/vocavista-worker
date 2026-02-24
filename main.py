@@ -25,7 +25,7 @@ def get_video_id(url):
     match = re.search(pattern, url)
     return match.group(1) if match else None
 
-@app.post("/simple-transcript-v3")
+@app.post("/simple-transcript")
 async def simple_transcript_v3(request: TranscriptRequest):
     video_id = get_video_id(request.url)
     if not video_id:
