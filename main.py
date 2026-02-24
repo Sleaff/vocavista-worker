@@ -10,7 +10,6 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# IMPORTANT: This allows your Chrome extension to talk to the API
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -18,10 +17,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Request model to match the Javascript 'body'
 class TranscriptRequest(BaseModel):
     url: str
-    lang: str = ""  # Default to empty string if not provided
+    lang: str = ""
 
 def get_video_id(url):
     pattern = r'(?:v=|\/|embed\/|shorts\/)([0-9A-Za-z_-]{11})'
@@ -35,24 +33,17 @@ async def simple_transcript(request: TranscriptRequest):
         raise HTTPException(status_code=400, detail="Invalid YouTube URL")
 
     try:
-        # Create an instance of the API
         api = YouTubeTranscriptApi()
         
-        # Get the list of all available transcripts
         transcript_list = api.list(video_id)
         
-        # Logic to pick the language
         if request.lang:
-            # Try to find the specific language requested
             target_transcript = transcript_list.find_transcript([request.lang])
         else:
-            # Default to English (or whatever is first available)
             target_transcript = transcript_list.find_transcript(['en', 'es', 'fr', 'de'])
 
-        # Fetch the actual text with timings
         data = target_transcript.fetch()
         
-        # Include timing information for each snippet
         transcript_with_timings = [
             {
                 "text": item.text,
@@ -62,12 +53,8 @@ async def simple_transcript(request: TranscriptRequest):
             for item in data
         ]
         
-        # full_text = " ".join([item.text for item in data])
-
-        # Return the exact JSON structure the Chrome extension expects
         return {
             "video_id": video_id, 
-            # "transcript": full_text,
             "transcript": transcript_with_timings,
             "transcriptLanguageCode": target_transcript.language_code,
             "languages": [
@@ -79,7 +66,6 @@ async def simple_transcript(request: TranscriptRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8080)
