@@ -10,9 +10,15 @@ import random
 import json
 
 load_dotenv()
-raw_proxy_list = json.loads(os.environ['PROXY_LIST'])
+
+raw_proxy_list = os.environ.get('PROXY_LIST', None)
+if raw_proxy_list:
+    raw_proxy_list = json.loads(raw_proxy_list)
+
 
 def get_random_proxy_credentials():
+    if raw_proxy_list is None:
+        return None
     proxy = random.choice(raw_proxy_list)
     # Converts host:port:username:password to http://username:password@host:port
     parts = proxy.split(":")
