@@ -7,11 +7,10 @@ import re
 from dotenv import load_dotenv
 import os
 import random
+import json
 
 load_dotenv()
-proxies_env = os.getenv("PROXIES", None)
-proxies_list = proxies_env.split(",") if proxies_env else []
-proxies_list = [p.strip() for p in proxies_list if p.strip()]
+proxies_list = json.loads(os.environ['PROXY_LIST'])
 
 def get_random_proxy_credentials():
     if not proxies_list:
